@@ -13,12 +13,11 @@ st.set_page_config(page_title="Carbon Footprint Awareness", page_icon="🌿", la
 page_bg = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-image: url("https://img.freepik.com/free-photo/misty-forest-landscape_181624-44201.jpg");
+    background-image: url("https://img.freepik.com/free-photo/forest-trees-sunlight-nature-background_1150-11088.jpg");
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
 }
-
 [data-testid="stHeader"] {background: rgba(0,0,0,0);}
 div.block-container {
     background-color: rgba(255,255,255,0.88);
@@ -32,7 +31,7 @@ st.markdown(page_bg, unsafe_allow_html=True)
 
 # 🌍 Navigation control
 if "page" not in st.session_state:
-    st.session_state.page = "awareness" 
+    st.session_state.page = "awareness"
 
 # 🏞️ PAGE 1: Awareness Section
 if st.session_state.page == "awareness":
@@ -112,7 +111,7 @@ elif st.session_state.page == "input":
         new_clothes = st.slider("How many new clothes do you buy monthly?", 0, 50, 5)
         waste_bag_count = st.slider("Waste bags used weekly", 0, 20, 4)
         waste_bag_size = st.selectbox("Waste bag size", ["small", "medium", "large", "extra large"])
-        diet = st.multiselect("Diet type", ["pescatarian", "vegan", "vegetarian","omnivore"])
+        diet = st.multiselect("Diet type", ["pescatarian", "vegan", "vegetarian", "omnivore"])
 
     # Encoding user input
     body_map = {'underweight': 1, 'normal': 2, 'overweight': 3, 'obese': 4}
@@ -129,6 +128,7 @@ elif st.session_state.page == "input":
     diet_pescatarian = 1 if "pescatarian" in diet else 0
     diet_vegan = 1 if "vegan" in diet else 0
     diet_vegetarian = 1 if "vegetarian" in diet else 0
+    diet_omnivore = 1 if "omnivore" in diet else 0
 
     user_data = pd.DataFrame([[ 
         vehicle_distance,
@@ -185,12 +185,21 @@ elif st.session_state.page == "input":
     if btn_clicked:
         st.session_state.page = "result"
         st.session_state.user_data = user_data
+        st.session_state.inputs = {
+            "vehicle_distance": vehicle_distance,
+            "air_freq": air_map[air_freq],
+            "diet_type": diet,
+            "waste_bags": waste_bag_count,
+            "new_clothes": new_clothes
+        }
         st.rerun()
 
-# 📊 PAGE 3: Result + Pie Chart
+# -----------------------------------------------------------
+# 📊 PAGE 3: Result (Realistic Data-Driven Pie Chart)
 elif st.session_state.page == "result":
     user_data = st.session_state.user_data
     prediction = model.predict(user_data)[0]
+    inputs = st.session_state.inputs
 
     st.success(f"### 🌱 Your estimated annual carbon emission: **{prediction:.2f} kg CO₂/year**")
 
@@ -200,9 +209,25 @@ elif st.session_state.page == "result":
     else:
         st.info(f"✅ You are {avg_emission - prediction:.2f} kg lower than average.")
 
-    categories = ["Travel", "Diet", "Waste", "Lifestyle"]
-    contributions = [40, 25, 20, 15]
+    # 🌍 Realistic contribution logic
+    travel_score = (inputs["vehicle_distance"] / 10000) * 40 + (inputs["air_freq"] * 5)
+    diet_score = 15 if "omnivore" in inputs["diet_type"] else (10 if "pescatarian" in inputs["diet_type"] else 5)
+    waste_score = inputs["waste_bags"] * 1.5
+    lifestyle_score = inputs["new_clothes"] * 0.8
 
+    total = travel_score + diet_score + waste_score + lifestyle_score
+    if total == 0:
+        total = 1  # avoid division by zero
+
+    contributions = [
+        round((travel_score / total) * 100, 1),
+        round((diet_score / total) * 100, 1),
+        round((waste_score / total) * 100, 1),
+        round((lifestyle_score / total) * 100, 1),
+    ]
+    categories = ["Travel", "Diet", "Waste", "Lifestyle"]
+
+    # 📊 Pie Chart (Compact)
     fig, ax = plt.subplots(figsize=(1.5, 1.5))
     ax.pie(
         contributions,
@@ -212,17 +237,18 @@ elif st.session_state.page == "result":
         textprops={'fontsize': 4},
         wedgeprops={'edgecolor': 'white'}
     )
-    ax.set_title("Your Carbon Footprint Breakdown", fontsize=12, pad=10)
+    ax.set_title("Your Carbon Footprint Breakdown", fontsize=10, pad=10)
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
     st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
 
     # 💡 Insights
     st.markdown("<h4 style='color:#2E8B57;'>💡 Insights</h4>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size:13px;'>🚗 Travel and diet account for most CO₂ emissions.</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size:13px;'>🌿 Switching to public or hybrid transport can cut emissions by ~20%.</p>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size:13px;'>👕 Buying fewer clothes and reducing waste lowers emissions significantly.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:13px;'>🚗 Your travel habits contribute the most if you drive long distances or fly often.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:13px;'>🥗 A plant-based or vegan diet can reduce your footprint by up to 30%.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:13px;'>🛍️ Reducing waste and shopping less frequently can lower emissions significantly.</p>", unsafe_allow_html=True)
 
     if st.button("⬅️ Go Back to Awareness Page"):
         st.session_state.page = "awareness"
         st.rerun()
+
