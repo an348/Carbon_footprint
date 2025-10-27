@@ -13,21 +13,36 @@ st.set_page_config(page_title="Carbon Footprint Awareness", page_icon="🌿", la
 page_bg = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-image: url("https://img.freepik.com/free-photo/forest-trees-sunlight-nature-background_1150-11088.jpg");
+    background-image: linear-gradient(
+        rgba(0, 0, 0, 0.55), 
+        rgba(0, 0, 0, 0.55)
+    ), 
+    url("https://img.freepik.com/free-photo/misty-forest-landscape_181624-44201.jpg");
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
 }
-[data-testid="stHeader"] {background: rgba(0,0,0,0);}
+
+[data-testid="stHeader"] {
+    background: rgba(0,0,0,0);
+}
+
 div.block-container {
-    background-color: rgba(255,255,255,0.88);
+    background-color: rgba(255, 255, 255, 0.18);
     border-radius: 20px;
     padding: 2rem;
     margin-top: 2rem;
+    backdrop-filter: blur(8px);
+}
+
+h1, h2, h3, h4, h5, h6, p, li {
+    color: #F8F8F8 !important;
+    text-shadow: 1px 1px 2px #000000;
 }
 </style>
 """
 st.markdown(page_bg, unsafe_allow_html=True)
+
 
 # 🌍 Navigation control
 if "page" not in st.session_state:
